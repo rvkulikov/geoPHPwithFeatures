@@ -1052,16 +1052,58 @@ class GPX extends GeoAdapter {
 
 	/**
 	* generate GPX from a geometrycollection
+	*
+	* Note that the elements in a GPX file are required to be in a specific order.
+	* Notably the order is waypoints, routes, and then tracks.
 	*/
   
 	public function collectionToGPX($geom) {
 		$gpx = '';
 		$components = $geom->getComponents();
 
-		foreach ($geom->getComponents() as $comp) {
-			$gpx .= $this->geometryToGPX($comp);
+		// first waypoints
+
+		foreach ( $components as $comp ) {
+
+			$type = strtolower( $comp->getGeomType() );
+
+			if ( $type == 'point' ) {
+				$gpx .= $this->geometryToGPX($comp);
+			}
 		}
-    
+
+		// then routes
+
+		foreach ( $components as $comp ) {
+
+			$type = strtolower( $comp->getGeomType() );
+
+			if ( $type == 'linestring' ) {
+
+				$meta_data = $comp->getMetaData();
+
+				if (( $meta_data != NULL ) && ( isset( $meta_data[ 'line_type' ] ) &&  $meta_data[ 'line_type' ] == 'rte' )) { 
+					$gpx .= $this->geometryToGPX($comp);
+				}
+			}
+		}
+
+		// then tracks
+
+		foreach ( $components as $comp ) {
+
+			$type = strtolower( $comp->getGeomType() );
+
+			if ( $type == 'linestring' ) {
+
+				$meta_data = $comp->getMetaData();
+
+				if (( $meta_data == NULL ) || ( isset( $meta_data[ 'line_type' ] ) &&  $meta_data[ 'line_type' ] == 'trk' )) { 
+					$gpx .= $this->geometryToGPX($comp);
+				}
+			}
+		}
+
 		return $gpx;
 
 	} // end of collectionToGPX()
