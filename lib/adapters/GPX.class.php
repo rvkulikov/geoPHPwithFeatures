@@ -1061,44 +1061,51 @@ class GPX extends GeoAdapter {
 		$gpx = '';
 		$components = $geom->getComponents();
 
-		uasort($components, function($a, $b) {
-            $aPrecedence = $this->getComponentPrecedence($a);
-            $bPrecedence =  getComponentPrecedence($b);
-            return ($aPrecedence < $bPrecedence) ? -1 : (($aPrecedence > $bPrecedence) ? 1 : 0);
-        });
+		uasort( $components, function($a, $b) {
+			$aPrecedence = $this->getComponentPrecedence($a);
+			$bPrecedence =  $this->getComponentPrecedence($b);
+			return ($aPrecedence < $bPrecedence) ? -1 : (($aPrecedence > $bPrecedence) ? 1 : 0);
+		});
 
-        foreach ($geom->getComponents() as $comp) {
-            $gpx .= $this->geometryToGPX($comp);
-        }
+		foreach ($geom->getComponents() as $comp) {
+			$gpx .= $this->geometryToGPX($comp);
+		}
 
 		return $gpx;
 
 	} // end of collectionToGPX()
 
-    // -------------------------------------------------
+	// -------------------------------------------------
 
-    /**
-     * Order as first waypoints, then routes, than tracks, then everything else
-     *
-     * @param $comp
-     *
-     * @return int
-     */
-    protected function getComponentPrecedence($comp) {
-        $type = strtolower( $comp->getGeomType() );
-        if ($type == 'point') {
-            return 1;
-        }
+	/**
+	* Order as first waypoints, then routes, than tracks, then everything else
+	*
+	* @param $comp
+	*
+	* @return int
+	*/
 
-        if ($type == 'linestring') {
-            $meta_data = $comp->getMetaData();
-            if (($meta_data != null) && (isset($meta_data['line_type']) && $meta_data['line_type'] == 'rte')) {
-                return 2;
-            }
-            return 3;
-        }
-        return 4;
-    }
+	protected function getComponentPrecedence($comp) {
+
+		$type = strtolower( $comp->getGeomType() );
+
+		if ($type == 'point') {
+			return 1;
+		}
+
+		if ($type == 'linestring') {
+
+			$meta_data = $comp->getMetaData();
+
+			if (($meta_data != null) && (isset($meta_data['line_type']) && $meta_data['line_type'] == 'rte')) {
+				return 2;
+			}
+
+			return 3;
+		}
+
+		return 4;
+	}
 
 	// -------------------------------------------------
 
