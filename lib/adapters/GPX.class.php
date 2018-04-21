@@ -1061,48 +1061,36 @@ class GPX extends GeoAdapter {
 		$gpx = '';
 		$components = $geom->getComponents();
 
-		// first waypoints
+		uasort($components, function($a, $b) {
+            /**
+             * Order as first waypoints, then routes, than tracks, then everything else
+             *
+             * @param $comp
+             *
+             * @return int
+             */
+		    function getOrder($comp) {
+                $type = strtolower( $comp->getGeomType() );
+                if ($type == 'point') {
+                    return 1;
+                }
 
-		foreach ( $components as $comp ) {
+                if ($type == 'linestring') {
+                    $meta_data = $comp->getMetaData();
+                    if (($meta_data != null) && (isset($meta_data['line_type']) && $meta_data['line_type'] == 'rte')) {
+                        return 2;
+                    }
+                    return 3;
+                }
+                return 4;
+            }
 
-			$type = strtolower( $comp->getGeomType() );
+            return getOrder($a) <=> getOrder($b);
+        });
 
-			if ( $type == 'point' ) {
-				$gpx .= $this->geometryToGPX($comp);
-			}
-		}
-
-		// then routes
-
-		foreach ( $components as $comp ) {
-
-			$type = strtolower( $comp->getGeomType() );
-
-			if ( $type == 'linestring' ) {
-
-				$meta_data = $comp->getMetaData();
-
-				if (( $meta_data != NULL ) && ( isset( $meta_data[ 'line_type' ] ) &&  $meta_data[ 'line_type' ] == 'rte' )) { 
-					$gpx .= $this->geometryToGPX($comp);
-				}
-			}
-		}
-
-		// then tracks
-
-		foreach ( $components as $comp ) {
-
-			$type = strtolower( $comp->getGeomType() );
-
-			if ( $type == 'linestring' ) {
-
-				$meta_data = $comp->getMetaData();
-
-				if (( $meta_data == NULL ) || ( isset( $meta_data[ 'line_type' ] ) &&  $meta_data[ 'line_type' ] == 'trk' )) { 
-					$gpx .= $this->geometryToGPX($comp);
-				}
-			}
-		}
+        foreach ($geom->getComponents() as $comp) {
+            $gpx .= $this->geometryToGPX($comp);
+        }
 
 		return $gpx;
 
