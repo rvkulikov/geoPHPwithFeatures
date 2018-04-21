@@ -1069,7 +1069,7 @@ class GPX extends GeoAdapter {
              *
              * @return int
              */
-		    function getOrder($comp) {
+		    function getPrecedence($comp) {
                 $type = strtolower( $comp->getGeomType() );
                 if ($type == 'point') {
                     return 1;
@@ -1085,7 +1085,9 @@ class GPX extends GeoAdapter {
                 return 4;
             }
 
-            return getOrder($a) <=> getOrder($b);
+            $aPrecedence = getPrecedence($a);
+            $bPrecedence =  getPrecedence($b);
+            return ($aPrecedence < $bPrecedence) ? -1 : (($aPrecedence > $bPrecedence) ? 1 : 0);
         });
 
         foreach ($geom->getComponents() as $comp) {
