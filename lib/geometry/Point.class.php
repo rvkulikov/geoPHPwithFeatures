@@ -147,7 +147,7 @@ class Point extends Geometry {
 		$coords = $this->coords;
 
 		if (! isset( $coords[2] ) ) {
-			$coords[2] = NULL;
+			$coords[2] = 0;
 		}
 
 		if (( $metadata = $this->getMetaData() ) != NULL ) {
