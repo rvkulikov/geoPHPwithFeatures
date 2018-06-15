@@ -1,5 +1,11 @@
 <?php
 
+/**
+* simple custom test harness
+*
+* NOTE This requires xmllint to validate the generated GPX files.
+*/
+
 // Uncomment to test
 if (getenv("GEOPHP_RUN_TESTS") == 1) {
 	run_test();
@@ -62,10 +68,10 @@ function run_test() {
 		if (( count( $parts ) == 2 ) && ( $parts[0] ) && ( $parts[1] )) {
 			$format = $parts[1];
 			$value = file_get_contents('./input/'.$file);
-			print '---- Testing '.$file."\n";
+			print '---- Test Input File : '.$file."\n";
 			$geometry = geoPHP::load($value, $format);
 
-			test_adapters($geometry, $format, $value);
+			test_adapters( $geometry, $format, $value );
 
 			print "after adapters\n";
 
@@ -266,24 +272,85 @@ function test_geometry($geometry) {
   $geometry->m();
 }
 
-function test_adapters($geometry, $format, $input) {
+function test_adapters( $geometry, $format, $input ) {
   // Test adapter output and input. Do a round-trip and re-test
 
   foreach (geoPHP::getAdapterMap() as $adapter_key => $adapter_class) {
+
     if ($adapter_key != 'google_geocode') { //Don't test google geocoder regularily. Uncomment to test
 
-      print 'test_adapters - ' . $adapter_key . "\n";
+      // GPX does not support polygons.
+
+      if ( $adapter_key == 'gpx' ) {
+
+        if (( $geometry->getGeomType() == 'MultiPolygon' ) || ( $geometry->getGeomType() == 'Polygon' )) {
+            print "{$adapter_key} does not support polygons. Skipping\n";
+            continue;
+        }
+
+        // If we have a FeatureCollection, search for any Polyons or MultiPolygons in the collection.
+
+        if (( $geometry->getGeomType() == 'FeatureCollection' ) || ( $geometry->getGeomType() == 'GeometryCollection' )) {
+
+          $components = $geometry->getComponents();
+
+          foreach ( $components as $comp ) {
+
+            if (( $comp->getGeomType() == 'MultiPolygon' ) || ( $comp->getGeomType() == 'Polygon' )) {
+
+              print "{$adapter_key} does not support polygons. Skipping\n";
+              continue 2;
+            }
+          }
+        }
+      }
+
+      // some tests include polygons in FeatureCollections.
+
+      print 'test_adapters - ' . $adapter_key . ' with geometry type ' . $geometry->geometryType() . "\n";
 
       $output = $geometry->out($adapter_key);
 
       if ($output) {
         $adapter_loader = new $adapter_class();
+
         $test_geom_1 = $adapter_loader->read($output);
+
         $test_geom_2 = $adapter_loader->read($test_geom_1->out($adapter_key));
 
         if ($test_geom_1->out('wkt') != $test_geom_2->out('wkt')) {
           print "Mismatched adapter output in ".$adapter_class."\n";
         }
+
+        // special case. Make sure we have generated valid GPX
+
+       if ( $adapter_key == 'gpx' ) {
+
+          // the idea is to dump the contents of the file and run xmllint on it.
+
+          if ( file_put_contents( './test.gpx', $output ) === FALSE ) {
+             throw new Exception( "Unable to write to file '{$output_path}'\n" );
+          }
+
+          // to make things easier to debug, format the GPX file to make it more readable.
+
+          system( "/bin/cat ./test.gpx | /usr/bin/xmllint --format - > ./test.pp.gpx" );
+
+          // now run xmllint on it.
+
+          system( "/usr/bin/xmllint --noout --schema http://www.topografix.com/GPX/1/1/gpx.xsd ./test.pp.gpx", $retval );
+
+          if ( $retval != 0 ) {
+
+             print( "Failed to validate GPX output in ".$adapter_class . "\n" );
+
+             // for the moment we'll just fail here. GPX Files must validate.
+
+             exit( -1 );
+          }
+
+        }
+       
       }
       else {
         print "Empty output on "  . $adapter_key . "\n";
