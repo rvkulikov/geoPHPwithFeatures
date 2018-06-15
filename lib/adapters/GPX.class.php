@@ -504,12 +504,6 @@ class GPX extends GeoAdapter {
 
 					break;
 
-				case 'mbymc_extension':
-
-					$meta_data[ 'mbymc_extension' ] = $this->parseMbymcExtension( $child );
-		
-					break;				
-
 			}
 
 		}
@@ -1178,13 +1172,13 @@ class GPX extends GeoAdapter {
 
 					case 'name' :
 
-						$gpx .= '<' . $this->nss . 'name>' . htmlentities( $data ) . '</' . $this->nss . 'name>';
+						$gpx .= '<' . $this->nss . 'name><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'name>';
 
 					break;
 
 					case 'cmt' :
 
-						$gpx .= '<' . $this->nss . 'cmt>' . htmlentities( $data ) . '</' . $this->nss . 'cmt>';
+						$gpx .= '<' . $this->nss . 'cmt><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'cmt>';
                 	
 						break;
 
@@ -1198,13 +1192,13 @@ class GPX extends GeoAdapter {
 
 					case 'url':
 
-						$gpx .= '<' . $this->nss . 'url>' . htmlentities( $data ) . '</' . $this->nss . 'url>';
+						$gpx .= '<' . $this->nss . 'url><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'url>';
 
 					break;
 
 					case 'ele':
 
-						$gpx .= '<' . $this->nss . 'ele>' . htmlentities( $data ) . '</' . $this->nss . 'ele>';
+						$gpx .= '<' . $this->nss . 'ele><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'ele>';
 
 					break;
 
@@ -1214,7 +1208,7 @@ class GPX extends GeoAdapter {
 
 						if ( $type == 'trkpt' ) {
 
-							$gpx .= '<' . $this->nss . 'time>' . htmlentities( $data ) . '</' . $this->nss . 'time>';
+							$gpx .= '<' . $this->nss . 'time><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'time>';
 
 						}
                 	
@@ -1222,19 +1216,19 @@ class GPX extends GeoAdapter {
 
 					case 'desc':
 
-						$gpx .= '<' . $this->nss . 'desc>' . htmlentities( $data ) . '</' . $this->nss . 'desc>';
+						$gpx .= '<' . $this->nss . 'desc><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'desc>';
 
 					break;
 
 					case 'sym':
 
-						$gpx .= '<' . $this->nss . 'sym>' . htmlentities( $data ) . '</' . $this->nss . 'sym>';
+						$gpx .= '<' . $this->nss . 'sym><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'sym>';
 
 					break;
 
 					case 'type':
 
-						$gpx .= '<' . $this->nss . 'type>' . htmlentities( $data ) . '</' . $this->nss . 'type>';
+						$gpx .= '<' . $this->nss . 'type><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'type>';
 
 					break;
 
@@ -1285,11 +1279,11 @@ class GPX extends GeoAdapter {
 			$gpx .= '<link href="' . htmlentities( $link[ 'href' ] ) . '">';
 
 			if ( isset( $link[ 'text' ] ) ) {
-				$gpx .= '<text>' . htmlentities( $link[ 'text' ] ) . '</text>';
+				$gpx .= '<text><![CDATA[' . htmlentities( $link[ 'text' ] ) . ']]></text>';
 			}
 
 			if ( isset( $link[ 'type' ] )) {
-				$gpx .= '<type>' . htmlentities( $link[ 'type' ] ) . '</type>';
+				$gpx .= '<type><![CDATA[' . htmlentities( $link[ 'type' ] ) . ']]></type>';
 			}
 
 			$gpx .= '</link>';
@@ -1341,18 +1335,6 @@ class GPX extends GeoAdapter {
 
 				break;
 
-				case 'mbymc_extension':
-
-					if (( $mbymc = $this->mbymcExtensionToGPX( $data )) == '' ) {
-						break;
-					}
-
-					$blank = false;
-
-					$gpx .= '<' . $this->nss . 'mbymc_extension>' . $mbymc . '</' . $this->nss . 'mbymc_extension>';
-
-				break;
-
 			}
 
 		}
@@ -1391,7 +1373,7 @@ class GPX extends GeoAdapter {
 
 					$blank = false;
 
-					$gpx .= '<' . $this->nss . 'gpxx:DisplayMode>' . htmlentities( $data ) . '</' . $this->nss . 'gpxx:DisplayMode>';
+					$gpx .= '<' . $this->nss . 'gpxx:DisplayMode><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'gpxx:DisplayMode>';
 
 					break;
 
@@ -1429,54 +1411,6 @@ class GPX extends GeoAdapter {
 		return $gpx;
 
 	} // end of waypointExtensionsToGPX()
-
-	// -------------------------------------------------
-
-	/**  
-	* generate mbymc extension
-	*/
-
-	protected function mbymcExtensionToGPX( $meta_data ) {
-
-		$gpx = '';
-
-		$blank = true;
-
-		foreach ( $meta_data as $key => $data ) {
-
-			if (( is_array( $data ) && ( count( $data ) == 0 )) || ( $data == '' )) {
-				continue;
-			}
-
-			switch( $key ) {
-
-				case 'object_type_name' :
-
-					$blank = false;
-
-					$gpx .= '<' . $this->nss . 'object_type_name>' . htmlentities( $data ) . '</' . $this->nss . 'object_type_name>';
-
-					break;
-
-				case 'object_guid':
-
-					$blank = false;
-
-					$gpx .= '<' . $this->nss . 'object_guid>' . htmlentities( $data ) . '</' . $this->nss . 'object_guid>';
-
-					break;
-
-			}
-
-		}
-
-		if ( $blank ) {
-			return '';
-		}
-
-		return $gpx;
-
-	} // end of mbymcExtensionToGPX()
 
 	// -------------------------------------------------
 
@@ -1520,7 +1454,7 @@ class GPX extends GeoAdapter {
 
 					foreach ( $data as $category ) {
 
-						$gpx .= '<' . $this->nss . 'gpxx:Category>' . htmlentities( $category ) . '</' . $this->nss . 'gpxx:Category>';
+						$gpx .= '<' . $this->nss . 'gpxx:Category><![CDATA[' . htmlentities( $category ) . ']]></' . $this->nss . 'gpxx:Category>';
 
 					}
 
@@ -1550,25 +1484,25 @@ class GPX extends GeoAdapter {
 
 				case 'gpxx_streetaddress' :
 
-					$gpx .= '<' . $this->nss . 'gpxx:StreetAddress>' . htmlentities( $data ) . '</' . $this->nss . 'gpxx:StreetAddress>';
+					$gpx .= '<' . $this->nss . 'gpxx:StreetAddress><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'gpxx:StreetAddress>';
 
 					break;
 
 				case 'gpxx_city' :
 
-					$gpx .= '<' . $this->nss . 'gpxx:City>' . htmlentities( $data ) . '</' . $this->nss . 'gpxx:City>';
+					$gpx .= '<' . $this->nss . 'gpxx:City><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'gpxx:City>';
 
 					break;
 
 				case 'gpxx_state' :
 
-					$gpx .= '<' . $this->nss . 'gpxx:State>' . htmlentities( $data ) . '</' . $this->nss . 'gpxx:State>';
+					$gpx .= '<' . $this->nss . 'gpxx:State><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'gpxx:State>';
 
 					break;
 
 				case 'gpxx_postalcode' :
 
-					$gpx .= '<' . $this->nss . 'gpxx:PostalCode>' . htmlentities( $data ) . '</' . $this->nss . 'gpxx:PostalCode>';
+					$gpx .= '<' . $this->nss . 'gpxx:PostalCode><![CDATA[' . htmlentities( $data ) . ']]></' . $this->nss . 'gpxx:PostalCode>';
 
 					break;
 
@@ -1604,7 +1538,7 @@ class GPX extends GeoAdapter {
 							$gpx .= ' Category="' . htmlentities( $category ) . '"';
 						}
 
-						$gpx .= '>' . htmlentities( $value ) . '</' . $this->nss . 'gpxx:PhoneNumber>';
+						$gpx .= '><![CDATA[' . htmlentities( $value ) . ']]></' . $this->nss . 'gpxx:PhoneNumber>';
 
 					}
 
@@ -1631,13 +1565,13 @@ class GPX extends GeoAdapter {
 		$gpx = '<copyright author="' . htmlentities( $meta_data[ 'author' ] ) . '">';
 
 		if ( isset( $meta_data[ 'year' ] )) {
-			$gpx .= '<year>' . htmlentities( $meta_data[ 'year' ] ) . '</year>';
+			$gpx .= '<year><![CDATA[' . htmlentities( $meta_data[ 'year' ] ) . ']]></year>';
 
 		}
 
 		if ( isset( $meta_data[ 'license' ] )) {
 
-			$gpx .= '<license>' . htmlentities( $meta_data[ 'license' ] ) . '</license>';
+			$gpx .= '<license><![CDATA[' . htmlentities( $meta_data[ 'license' ] ) . ']]></license>';
 		}
 
 		return $gpx;
@@ -1662,7 +1596,7 @@ class GPX extends GeoAdapter {
 
 				case 'name':
 
-					$gpx .= '<name>' . htmlentities( $meta_data[ 'name' ] ) . '</name>';
+					$gpx .= '<name><![CDATA[' . htmlentities( $meta_data[ 'name' ] ) . ']]></name>';
 
 					break;
 
@@ -1670,8 +1604,8 @@ class GPX extends GeoAdapter {
 
 					$gpx .= '<email>';
 
-					$gpx .= '<id>' . htmlentities( $meta_data[ 'email' ][ 'id' ] ) . '</id>';
-					$gpx .= '<domain>' . htmlentities( $meta_data[ 'domain' ] ) . '</domain>';
+					$gpx .= '<id><![CDATA[' . htmlentities( $meta_data[ 'email' ][ 'id' ] ) . ']]></id>';
+					$gpx .= '<domain><![CDATA[' . htmlentities( $meta_data[ 'domain' ] ) . ']]></domain>';
 
 					break;
 
