@@ -58,7 +58,7 @@ class GPX extends GeoAdapter {
 
 		if (( $meta_data = $geometry->getMetaData()) != NULL ) {
 
-			$gpx .= '<metadata>' . $this->metaDataToGPX( $meta_data ) . '</metadata>';
+			$gpx .= '<metadata>' . $this->metaDataToGPX( 'root', $meta_data ) . '</metadata>';
 
 		}
 
@@ -915,7 +915,7 @@ class GPX extends GeoAdapter {
 				$gpx .= '>';
 			}
 
-			$gpx .= $this->metaDataToGPX( $meta_data );
+			$gpx .= $this->metaDataToGPX( 'wpt', $meta_data );
 
 		}
 
@@ -966,7 +966,7 @@ class GPX extends GeoAdapter {
 		// if metadata contains junk this may generate incorrect GPX.
 
 		if (( $meta_data = $geom->getMetaData()) != NULL ) {
-			$gpx .= $this->metaDataToGPX( $meta_data );
+			$gpx .= $this->metaDataToGPX( 'trk', $meta_data );
 		}
 
 		// Not sure if this is correct, but it seems trkseg's 
@@ -995,7 +995,7 @@ class GPX extends GeoAdapter {
 					$gpx .= '>';
 				}
 
-				$gpx .= $this->metaDataToGPX( $meta_data );
+				$gpx .= $this->metaDataToGPX( 'trkseg', $meta_data );
 
 			}
 
@@ -1028,14 +1028,14 @@ class GPX extends GeoAdapter {
 		// if metadata contains junk this may generate incorrect GPX.
 
 		if (( $meta_data = $geom->getMetaData()) != NULL ) {
-			$gpx .= $this->metaDataToGPX( $meta_data );
+			$gpx .= $this->metaDataToGPX( 'rte', $meta_data );
 		}
 
 		foreach ($geom->getComponents() as $comp) {
 			$gpx .= '<'.$this->nss.'rtept lat="'.$comp->getY().'" lon="'.$comp->getX() . '"';
 
 			if (( $meta_data = $comp->getMetaData()) != NULL ) {
-				$gpx .= '>' . $this->metaDataToGPX( $meta_data ) . '</' . $this->nss . 'rtept>';
+				$gpx .= '>' . $this->metaDataToGPX( 'rtept', $meta_data ) . '</' . $this->nss . 'rtept>';
 			} else {
 				$gpx .= '/>';
 			}
@@ -1061,16 +1061,39 @@ class GPX extends GeoAdapter {
 		$gpx = '';
 		$components = $geom->getComponents();
 
-		uasort( $components, function($a, $b) {
-			$aPrecedence = $this->getComponentPrecedence($a);
-			$bPrecedence =  $this->getComponentPrecedence($b);
-			return ($aPrecedence < $bPrecedence) ? -1 : (($aPrecedence > $bPrecedence) ? 1 : 0);
-		});
+		// first waypoints
 
-		foreach ($geom->getComponents() as $comp) {
-			$gpx .= $this->geometryToGPX($comp);
+		foreach ( $components as $comp ) {
+			$type = strtolower( $comp->getGeomType() );
+			if ( $type == 'point' ) {
+				$gpx .= $this->geometryToGPX($comp);
+			}
 		}
 
+		// then routes
+
+		foreach ( $components as $comp ) {
+			$type = strtolower( $comp->getGeomType() );
+			if ( $type == 'linestring' ) {
+				$meta_data = $comp->getMetaData();
+				if (( $meta_data != NULL ) && ( isset( $meta_data[ 'line_type' ] ) &&  $meta_data[ 'line_type' ] == 'rte' )) { 
+					$gpx .= $this->geometryToGPX($comp);
+				}
+			}
+		}
+
+		// then tracks
+
+		foreach ( $components as $comp ) {
+			$type = strtolower( $comp->getGeomType() );
+
+			if ( $type == 'linestring' ) {
+				$meta_data = $comp->getMetaData();
+				if (( $meta_data == NULL ) || ( isset( $meta_data[ 'line_type' ] ) &&  $meta_data[ 'line_type' ] == 'trk' )) { 
+					$gpx .= $this->geometryToGPX($comp);
+				}
+			}
+		}
 		return $gpx;
 
 	} // end of collectionToGPX()
@@ -1114,9 +1137,11 @@ class GPX extends GeoAdapter {
 	*
 	* To add to our misery, the order of the nodes matters. If we do not generate them 
 	* in the exact order specificed in the spec the generated GPX file will fail to valid.
+	* 
+	* @param string $type root, wpt, rte, rtept, trk, trkpt
 	*/
 
-	protected function metaDataToGPX( $meta_data ) {
+	protected function metaDataToGPX( $type, $meta_data ) {
 
 		$gpx = '';
 
@@ -1185,7 +1210,13 @@ class GPX extends GeoAdapter {
 
 					case 'time':
 
-						$gpx .= '<' . $this->nss . 'time>' . htmlentities( $data ) . '</' . $this->nss . 'time>';
+						// time attributes only apply to track points
+
+						if ( $type == 'trkpt' ) {
+
+							$gpx .= '<' . $this->nss . 'time>' . htmlentities( $data ) . '</' . $this->nss . 'time>';
+
+						}
                 	
 					break;
 
